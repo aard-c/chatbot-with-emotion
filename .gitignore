@@ -1,0 +1,30 @@
+# ===== .NET =====
+bin/
+obj/
+*.user
+*.suo
+*.vs/
+*.vscode/
+*.nupkg
+*.DS_Store
+
+# ===== SQLite DB =====
+*.db
+*.sqlite
+*.sqlite3
+
+# ===== React / Node =====
+node_modules/
+build/
+.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===== Python / AI service =====
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
