@@ -14,14 +14,17 @@ const ChatScreen = () => {
     };
 
     try {
-      // Send message to backend
+      
       const res = await axios.post("http://localhost:5286/api/messages", newMessage);
 
-      // Add both user message and AI response to chat
+      
+      const { sentiment, score } = res.data;
+
+ 
       setMessages([
         ...messages,
         { sender: "You", text: input },
-        { sender: "AI", text: `Sentiment: ${res.data.sentiment}` },
+        { sender: "AI", text: `Sentiment: ${sentiment} (Score: ${score})` },
       ]);
 
       setInput("");

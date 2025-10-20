@@ -14,5 +14,20 @@ def analyze_sentiment(text):
         sentiment = "neutral"
     return {"sentiment": sentiment, "score": round(result['score'], 3)}
 
-iface = gr.Interface(fn=analyze_sentiment, inputs="text", outputs="json")
-iface.launch()
+
+app = gr.Interface(
+    fn=analyze_sentiment,
+    inputs=gr.Textbox(label="Enter text"),
+    outputs="json",
+)
+
+
+app.launch(
+    server_name="0.0.0.0",
+    server_port=7860,
+    show_api=True,
+    share=True,        
+    ssr_mode=False,      
+    mcp_server=True
+)
+

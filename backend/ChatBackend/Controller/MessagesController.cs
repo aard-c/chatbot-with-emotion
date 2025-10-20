@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using ChatBackend.Data;
 using ChatBackend.Models;
+using System;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-using System;
+using Newtonsoft.Json.Linq;
 
 namespace ChatBackend.Controllers
 {
@@ -15,15 +16,10 @@ namespace ChatBackend.Controllers
     public class MessagesController : ControllerBase
     {
         private readonly AppDbContext _context;
-        private readonly IHttpClientFactory _httpClientFactory;
 
-        // Hugging Face Space endpoint
-        private const string HuggingFaceUrl = "";
-
-        public MessagesController(AppDbContext context, IHttpClientFactory httpClientFactory)
+        public MessagesController(AppDbContext context)
         {
             _context = context;
-            _httpClientFactory = httpClientFactory;
         }
 
         [HttpPost]
@@ -32,36 +28,43 @@ namespace ChatBackend.Controllers
             if (string.IsNullOrWhiteSpace(message.Text))
                 return BadRequest(new { message = "Text is required." });
 
-            var client = _httpClientFactory.CreateClient();
-            client.Timeout = TimeSpan.FromSeconds(300); // increase timeout
+            string apiUrl = "http://localhost:7860/gradio_api/predict/"; 
 
-            var payload = JsonSerializer.Serialize(new { data = new[] { message.Text } });
+            using var client = new HttpClient();
 
-            var response = await client.PostAsync(
-                HuggingFaceUrl,
-                new StringContent(payload, Encoding.UTF8, "application/json")
-            );
+            var requestBody = new
+            {
+                data = new[] { message.Text } 
+            };
 
-            if (!response.IsSuccessStatusCode)
-                return StatusCode((int)response.StatusCode, new { message = "AI service failed" });
+            var response = await client.PostAsJsonAsync(apiUrl, requestBody);
+            string responseText = "";
 
-            var resultJson = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
+                if (result != null && result.ContainsKey("data"))
+                {
+                    var output = result["data"] as Newtonsoft.Json.Linq.JArray;
+                    responseText = output?[0]?.ToString() ?? "No response";
+                }
+                else
+                {
+                    responseText = "Unexpected response format.";
+                }
+            }
+            else
+            {
+                responseText = $"AI service failed ({response.StatusCode})";
+            }
 
-            // Using JsonNode to parse response
-            var jsonDoc = JsonNode.Parse(resultJson);
-            message.Sentiment = jsonDoc?["data"]?[0]?.ToString() ?? "unknown";
-
+            message.Sentiment = responseText;
             message.CreatedAt = DateTime.Now;
             _context.Messages.Add(message);
             await _context.SaveChangesAsync();
 
             return Ok(message);
         }
-    }
 
-
-    public class HfResponse
-    {
-        public string[] Data { get; set; }
     }
 }

@@ -18,8 +18,8 @@ namespace ChatBackend.Controllers
         [HttpPost]
         public IActionResult Register([FromBody] User user)
         {
-            if (string.IsNullOrWhiteSpace(user.Nickname))
-                return BadRequest(new { message = "Nickname is required." });
+            if (string.IsNullOrWhiteSpace(user.Username))
+                return BadRequest(new { message = "Username is required." });
 
             _context.Users.Add(user);
             _context.SaveChanges();
